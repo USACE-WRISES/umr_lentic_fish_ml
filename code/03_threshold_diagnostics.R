@@ -1,4 +1,6 @@
-source("config.R")
+library(tidymodels)
+
+source("code/config.R")
 load(paste0(OUTPUT_PATH, "models/01_folds.RData"))
 
 # ── Threshold optimization function ────────────────────────────────────────
