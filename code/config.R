@@ -13,7 +13,7 @@ VARS_REST <- c("occ", "cluster", "period",
                "vegd", "substrt", "snag")
 
 VARS_BLGL <- c("occ", "cluster",
-               "temp", "depth", "current", "do")
+               "temp", "depth", "current", "do", "period")
 
 CONTINUOUS_VARS  <- c("temp", "depth", "current", "do")
 CATEGORICAL_VARS <- c("period", "vegd", "substrt", "snag")
