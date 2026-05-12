@@ -248,7 +248,7 @@ fish_6fold %>%
 # Fish data with all spatial cv scenarios
 fish_all_cv <- fish_6fold %>% left_join(backwater_cluster)
 
-write_csv(fish_all_cvs, "data/cleaned/fish_all_cv.csv")
+write_csv(fish_all_cv, "data/cleaned/fish_all_cv.csv")
 
 #sp_list <- unique(fish_all_cv$species)
 #if (!is.null(SP_SUBSET)) sp_list <- SP_SUBSET
