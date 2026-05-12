@@ -1,9 +1,11 @@
-source("config.R")
+library(tidymodels)
+
+source("code/config.R")
 load(paste0(OUTPUT_PATH, "models/01_folds.RData"))
 load(paste0(OUTPUT_PATH, "results/03_thresholds_diagnostics.RData"))
 
 # Run importance and PDPs only for primary model type
-PRIMARY_MODEL <- "spatial_rest"
+PRIMARY_MODEL <- "cluster_rest"
 load(paste0(OUTPUT_PATH, "models/02_", PRIMARY_MODEL, ".RData"))
 
 importance_df_all <- tibble()
@@ -13,7 +15,7 @@ names(final_rf_list) <- sp_list
 
 for (i in seq_along(sp_list)) {
   sp         <- sp_list[i]
-  fish_train <- spatial_folds_list[[sp]]$data %>%
+  fish_train <- cluster_folds_list[[sp]]$data %>%
     dplyr::select(all_of(VARS_REST))
   
   cat("Importance/PDP:", sp, format(Sys.time(), "%H:%M:%S"), "\n")
@@ -71,6 +73,39 @@ for (i in seq_along(sp_list)) {
   
   pdp_all <- bind_rows(pdp_all, 
                        bind_rows(Filter(Negate(is.null), pdp_list_sp)))
+}
+
+# Function to extract features from PDP plots
+extract_pdp_features <- function(pd_df, group_keys) {
+  var_name <- group_keys$variable  # get variable name from group keys, not from pd_df
+  
+  continuous_vars <- c("temp", "depth", "current", "do")
+  
+  if (!var_name %in% continuous_vars) {
+    return(tibble(
+      cor_linear     = NA_real_,
+      peak_location  = NA_real_,
+      response_range = max(pd_df$yhat) - min(pd_df$yhat)
+    ))
+  }
+  
+  x <- pd_df[[var_name]]
+  y <- pd_df$yhat
+  
+  # Guard against all-NA or single-value x
+  if (all(is.na(x)) || length(unique(x)) < 3) {
+    return(tibble(
+      cor_linear     = NA_real_,
+      peak_location  = NA_real_,
+      response_range = max(y) - min(y)
+    ))
+  }
+  
+  tibble(
+    cor_linear     = cor(x, y, method = "spearman"),
+    peak_location  = (x[which.max(y)] - min(x)) / (max(x) - min(x)),
+    response_range = max(y) - min(y)
+  )
 }
 
 # Signed importance for clustering
