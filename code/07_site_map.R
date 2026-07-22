@@ -42,6 +42,23 @@ state_names <- data.frame(name = c("Wisconsin", "Minnesota", "Illinois", "Iowa")
   st_as_sf(coords = c("lon", "lat"), crs = 4326) %>%
   st_transform(3857)
 
+cities <- data.frame(
+  name = c("Minneapolis", "Lake City", "La Crosse", "Bellevue", "Clinton"),
+  lat  = c(44.9778, 44.4478-.03, 43.8014, 42.2586, 41.8280),
+  lon = c(-93.2650, -92.2668, -91.2396 + .05, -90.4221 - .05, -90.2496))
+
+cities_sf <- cities %>% 
+  st_as_sf(coords = c("lon", "lat"), crs = 4326) %>%
+    st_transform(3857)
+
+cities_names <- cities %>%
+  mutate(lat_shift = c(-.08, -.07, 0, 0, 0),
+         lon_shift = c(-.24,-.03,.29,-.26,-.23),
+         lat = lat + lat_shift,
+         lon = lon + lon_shift) %>% 
+  st_as_sf(coords = c("lon", "lat"), crs = 4326) %>%
+  st_transform(3857)
+  
 # Import river
 
 # Create bounding box for plot area; convoluted code because you can't st_transform bbox objects
@@ -67,25 +84,28 @@ p_main <- ggplot() +
   geom_sf(data= us_simp, fill = alpha("white", 0)) +
   geom_sf(data = pool_bounds, fill = "#CCEEF9")+
   geom_sf(data = fish_sf, aes(color = pool), size = 0.5)+
+  geom_sf(data = cities_sf) +
   #geom_sf(data = urb_areas, color = NA, alpha = .9)+
   #geom_sf(data= rg_nhd, color = "#377eb8") +
   #geom_sf(data=mrg_simp, aes(color = reach),
           #alpha = 0.8, lwd = 3)+
   #geom_sf(data = map_items, aes(shape = type), size = 3)+
   #geom_sf(data = alb_city, size = 1) + 
-  geom_sf_text(data = state_names, aes(label = name), size = 3)+ #nudge_x = 2.3e4)+
+  geom_sf_text(data = state_names, aes(label = name), size = 6, fontface = "italic")+ #nudge_x = 2.3e4)+
+  geom_sf_text(data = cities_names, aes(label = name), size = 3.5)+
   #scale_shape_manual(values = c(0, 2))+
   scale_color_manual(values = cols)+
   coord_sf(xlim = c(b_box_main[1], b_box_main[3]), ylim = c(b_box_main[2], b_box_main[4]), 
            expand = FALSE)+
   labs(color = "Pool")+
-  theme_void()+#base_size = 8)+
+  guides(color = guide_legend(override.aes = list(size = 4)))+
+  theme_void(base_size = 14)+
   theme(plot.background = element_rect(fill = "transparent", color = NA), # Needed to make background transparent when saving
         panel.border = element_rect(color = "gray30", fill = NA, linewidth = 1),
         legend.title = element_text(size = 14),
         legend.text = element_text(size = 12),
   ) +
-  annotation_scale(location = "tr", height = unit(.2, "cm")) +
+  annotation_scale(location = "tr", height = unit(.2, "cm"), text_cex = 1.1) +
   annotation_north_arrow(location = "br", which_north = "true", width = unit(1, "cm"), height = unit(1, "cm"))
 p_main
 
@@ -102,6 +122,18 @@ lake_sup <- st_read("data/raw/spatial/hydro_p_LakeSuperior/hydro_p_LakeSuperior.
   st_sf()
 
 # Make inset plot ####
+#Add inset below 
+rect <- st_as_sfc(
+  st_bbox(
+    c(
+      xmin = -99.3,
+      ymin = 35.3,
+      xmax = -90.1,
+      ymax = 36.8
+    ),
+    crs = 4326)) %>%
+  st_transform(3857)
+
 p_ins <- 
   ggplot() + 
   #geom_spatraster_rgb(data = bm) + # Map the baseline data using function from tidyterra package
@@ -112,18 +144,19 @@ p_ins <-
   #geom_sf(data = mrg_crop,
    #       color = "#377eb8", linewidth = 1.5)+
   geom_sf(data = st_as_sfc(b_box_main), fill = "gray", alpha = 0.5)+
+  geom_sf(data = rect, fill = "white", color = NA) +
   coord_sf(xlim = c(b_box_ins[1], b_box_ins[3]), ylim = c(b_box_ins[2], b_box_ins[4]), 
            expand = FALSE)+
-  theme_void(base_size = 12)+
+  theme_void(base_size = 14)+
   theme(plot.background = element_rect(fill = "white", #"transparent", # Needed to make background transparent when saving
                                        color = "black", linewidth = 1), 
         legend.title = element_blank()) + #Remove legend title
-  annotation_scale(location = "bl", height = unit(.1, "cm"))
+  annotation_scale(location = "bl", height = unit(.1, "cm"), text_cex = .8)
 
 #l,b,r,t
 p_main + inset_element(p_ins, -0.4, 0.02, .65, .35, align_to = 'full')
 
-ggsave(filename = "output/figures/fig1_umr_map.jpeg",  bg = "transparent", width = 6, height = 4, units = "in")
+ggsave(filename = "output/figures/fig1_umr_map.jpeg",  bg = "transparent", width = 9, height = 6, units = "in")
 
 # Supplemental plots
 set.seed(1)
