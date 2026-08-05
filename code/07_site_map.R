@@ -83,7 +83,7 @@ p_main <- ggplot() +
   geom_spatraster_rgb(data = bm2) + # Map the baseline data using function from tidyterra package
   geom_sf(data= us_simp, fill = alpha("white", 0)) +
   geom_sf(data = pool_bounds, fill = "#CCEEF9")+
-  geom_sf(data = fish_sf, aes(color = pool), size = 0.5)+
+  geom_sf(data = fish_sf, aes(fill = Pool), size = 1.5, pch = 21, alpha = 0.8)+
   geom_sf(data = cities_sf) +
   #geom_sf(data = urb_areas, color = NA, alpha = .9)+
   #geom_sf(data= rg_nhd, color = "#377eb8") +
@@ -94,11 +94,11 @@ p_main <- ggplot() +
   geom_sf_text(data = state_names, aes(label = name), size = 6, fontface = "italic")+ #nudge_x = 2.3e4)+
   geom_sf_text(data = cities_names, aes(label = name), size = 3.5)+
   #scale_shape_manual(values = c(0, 2))+
-  scale_color_manual(values = cols)+
+  scale_fill_manual(values = cols)+
   coord_sf(xlim = c(b_box_main[1], b_box_main[3]), ylim = c(b_box_main[2], b_box_main[4]), 
            expand = FALSE)+
-  labs(color = "Pool")+
-  guides(color = guide_legend(override.aes = list(size = 4)))+
+  labs(fill = "Fish Surveys\nLocations")+
+  guides(fill = guide_legend(override.aes = list(size = 4)))+
   theme_void(base_size = 14)+
   theme(plot.background = element_rect(fill = "transparent", color = NA), # Needed to make background transparent when saving
         panel.border = element_rect(color = "gray30", fill = NA, linewidth = 1),
