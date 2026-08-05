@@ -85,15 +85,8 @@ p_main <- ggplot() +
   geom_sf(data = pool_bounds, fill = "#CCEEF9")+
   geom_sf(data = fish_sf, aes(fill = Pool), size = 1.5, pch = 21, alpha = 0.8)+
   geom_sf(data = cities_sf) +
-  #geom_sf(data = urb_areas, color = NA, alpha = .9)+
-  #geom_sf(data= rg_nhd, color = "#377eb8") +
-  #geom_sf(data=mrg_simp, aes(color = reach),
-          #alpha = 0.8, lwd = 3)+
-  #geom_sf(data = map_items, aes(shape = type), size = 3)+
-  #geom_sf(data = alb_city, size = 1) + 
   geom_sf_text(data = state_names, aes(label = name), size = 6, fontface = "italic")+ #nudge_x = 2.3e4)+
   geom_sf_text(data = cities_names, aes(label = name), size = 3.5)+
-  #scale_shape_manual(values = c(0, 2))+
   scale_fill_manual(values = cols)+
   coord_sf(xlim = c(b_box_main[1], b_box_main[3]), ylim = c(b_box_main[2], b_box_main[4]), 
            expand = FALSE)+
@@ -136,13 +129,8 @@ rect <- st_as_sfc(
 
 p_ins <- 
   ggplot() + 
-  #geom_spatraster_rgb(data = bm) + # Map the baseline data using function from tidyterra package
   geom_sf(data= us, fill = alpha("white", 0)) +
   geom_sf(data= lake_sup, fill = alpha("white", 0)) +
-  #geom_sf(data= rg_nhd, color = "#377eb8", linewidth = .3) +
-  #geom_sf(data = filter(mrg_simp, str_detect(reach, "San|Isl|Ang|Coch")),
-  #geom_sf(data = mrg_crop,
-   #       color = "#377eb8", linewidth = 1.5)+
   geom_sf(data = st_as_sfc(b_box_main), fill = "gray", alpha = 0.5)+
   geom_sf(data = rect, fill = "white", color = NA) +
   coord_sf(xlim = c(b_box_ins[1], b_box_ins[3]), ylim = c(b_box_ins[2], b_box_ins[4]), 
@@ -222,6 +210,3 @@ p4u + p4l +p8+p13 +
   plot_layout(design = layout)
 
 ggsave(filename = "output/figures/figS2_map_patch_cv.jpeg",  bg = "transparent", width = 6, height = 4, units = "in")
-
-
-
