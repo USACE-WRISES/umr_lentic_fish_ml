@@ -144,7 +144,15 @@ ggplot() +
     color = "Variable set", shape = "CV scheme") +
   theme_bw() +
   theme(panel.grid.major = element_blank(),
-        panel.grid.minor.y = element_blank())
+        panel.grid.minor.y = element_blank())+
+  # 1. Turn off clipping so annotations can draw outside the panel boundary
+  coord_cartesian(clip = "off") +
+  # 2. Add text using viewport (npc) coordinates relative to the plot area
+  annotation_custom(textGrob("Poor", x = 0.16, y = 1.03,  gp = gpar(fontface = "italic"))) +
+  annotation_custom(textGrob("Useful", x = 0.57, y = 1.03, gp = gpar(fontface = "italic"))) +
+  annotation_custom(textGrob("Excellent", x = 0.92, y = 1.03, gp = gpar(fontface = "italic"))) +
+  # 3. Pad the outer margins so the text doesn't hit the image file edge
+  theme(plot.margin = margin(t = 20, r = 10, b = 10, l = 10))
 
 ggsave("output/figures/fig2_mod_comp.jpeg", width = 9, height = 6.5)
 
