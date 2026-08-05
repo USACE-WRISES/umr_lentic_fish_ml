@@ -48,7 +48,6 @@ outliers <- imp_rank %>%
 ggplot(imp_rank, aes(rank, reorder(var_name, desc(rank))))+
   ggridges::geom_density_ridges(aes(height = after_stat(density)), scale = .95, stat = "density", trim = TRUE, )+
   geom_point(data = outliers)+
-  #geom_jitter(width = .1, height = .1)+
   geom_text_repel(data = outliers, aes(label = Common_Name),
                   size = 2.75,
                   force = 3,
@@ -106,7 +105,6 @@ extract_continuous_features <- function(pd_df, var_name) {
     max_x = max(x),
     min_x = min(x),
     trough_location = x_norm[which.min(y)],
-    #response_range  = max(y) - min(y)
   )
 }
 
@@ -127,13 +125,6 @@ pdp_shape_features <- pdp_all %>%
   ungroup()
 
 # ── Scaled importance (relative within species) ───────────────────────────────
-# Raw ranger importance values are not comparable across species, since each
-# species has a separately-fit random forest with its own overall predictive
-# power, sample size, and class balance, all of which affect the absolute
-# magnitude of importance scores. Scaling within species (dividing by the sum)
-# converts importance into "proportion of this species' total explainable
-# signal attributable to this predictor," which IS comparable across species
-# and is the appropriate basis for any importance-based weighting.
 
 importance_scaled_df <- importance_df_all %>%
   group_by(species) %>%
@@ -145,9 +136,7 @@ shape_with_importance <- pdp_shape_features %>%
   left_join(importance_scaled_df, by = c("species", "variable"))
 
 # ════════════════════════════════════════════════════════════════════════════
-# Custom pairwise distance with species-specific importance
-#             weighting -- preserves full species-specific signal without
-#             ever multiplying importance into the feature values
+# Custom pairwise distance with species-specific importance weighting
 # ════════════════════════════════════════════════════════════════════════════
 
 # Normalize each shape feature to a comparable 0-1 scale across species,
@@ -161,16 +150,10 @@ shape_normalized <- shape_with_importance %>%
     },
     peak_location_n   = peak_location,    # already 0-1
     trough_location_n = trough_location,  # already 0-1
-    #response_range_n  = {
-     # rng <- range(response_range, na.rm = TRUE)
-      #if (diff(rng) < 1e-9) 0.5 else (response_range - rng[1]) / diff(rng)
-    #}
   ) %>%
   ungroup() %>%
   mutate(across(c(cor_linear_n, 
                   peak_location_n, 
-                  #trough_location_n, 
-                  #response_range_n
                   ),
                 ~ replace_na(.x, 0.5)))  # neutral fill for missing values
 
@@ -199,13 +182,9 @@ for (i in seq_len(n_sp - 1)) {
         d_cor    = abs(cor_linear_n_i      - cor_linear_n_j),
         d_peak   = abs(peak_location_n_i   - peak_location_n_j),
         d_trough = abs(trough_location_n_i - trough_location_n_j),
-        #d_range  = abs(response_range_n_i  - response_range_n_j),
         d_var    = case_when(variable %in% c("current", "depth", "do", "temp", "vegd") ~ (d_cor + d_peak #)/ 2, 
                                                                                           + d_trough)/ 3,
                              TRUE ~ (d_peak + d_trough)/2),
-        # + d_trough + d_range) / 4,
-        # Weight = average relative importance of this predictor
-        # for the two species being compared
         w_var    = (importance_scaled_i + importance_scaled_j) / 2
       )
     
@@ -236,24 +215,20 @@ sil_df <- map_dfr(2:8, function(k) {
   )
 })
 
-# ── Convert your dist object to a full matrix ────────────────────────────────
-# Works for either gower_dist_A (Approach A) or dist_custom (Approach B)
-# Just swap which one you assign to dist_for_boot
+# ── Convert dist object to a full matrix ────────────────────────────────
 
 dist_for_boot <- dist_custom
 dist_matrix   <- as.matrix(dist_for_boot)
 
-# Sanity check -- rownames/colnames should be species, matrix should be symmetric
+# Confirm matrix symmetry
 stopifnot(isSymmetric(dist_matrix))
-#rownames(dist_matrix) <- rownames(dist_custom)  # or cluster_matrix used for dist_custom
-#colnames(dist_matrix) <- rownames(cluster_matrix_A)
 
 # ── Sweep across k using the distance-aware clustering interface ──────────────
 boot_results <- map_dfr(2:8, function(k) {
   boot_k <- clusterboot(
     dist_matrix,
     B             = 500,
-    distances     = TRUE,           # tells clusterboot data IS a dissimilarity matrix
+    distances     = TRUE,           # tells clusterboot data is a dissimilarity matrix
     clustermethod = disthclustCBI,  # distance-matrix-aware hierarchical interface
     method        = "ward.D2",
     k             = k,
@@ -301,11 +276,9 @@ sil_boot %>%
   geom_line() +
   geom_point(size = 3) +
   facet_wrap(~metric, nrow = 4, scales = "free_y")+
-  #scale_colour_manual(values = c("steelblue", "firebrick")) +
   scale_x_continuous(breaks = 2:15) +
   labs(x = "Number of clusters (k)", y = "Evaluation metric",
        colour = NULL,
-       #title = "Cluster solution comparison"
   ) +
   theme_bw(base_size = 14) +
   theme(legend.position = "none",
@@ -344,21 +317,6 @@ ddata_labels <- left_join(ddata$labels, sp_guilds, by = c("label" = "species")) 
                                            "Pelagic Rheo-\nLimnophilic",                         
                                            "Rheo-\nLimnophilic", 
                                            "Rheophilic")))
-# p1 <- 
-#   ggplot(segment(ddata))+
-#   geom_segment(aes(x=x, y=y, xend=xend, yend=yend))+
-#   geom_text(data = ddata$labels, aes(x,y-.23, label = name_clust, color = str_to_title(guild)), 
-#             size = 3.5)+
-#   coord_flip(clip="off")+
-#   labs(color = "Guild")+
-#   scale_color_manual(values = c("#1b9e77",
-#                                "#d95f02",
-#                               "#7570b3",
-#                              "gray40"))+
-#   theme_void(base_size = 14)+
-#   theme(
-#     plot.margin = margin(0, 0, 0, 30)  # extra left margin
-#   ) 
 
 p1 <- 
   ggplot(segment(ddata)) +
@@ -389,7 +347,6 @@ p2 <- sil_sp %>%
     axis.line.y = element_blank(),
     plot.margin = margin(0, 0, 0, 0)
   ) 
-
 
 p2+ p1 + plot_layout(width = c(.2, 1))
 
@@ -548,7 +505,6 @@ x1 + x2 + x3 + x4 +
   plot_layout(ncol = 4)
 
 ggsave(filename = "output/figures/fig6_cat_var_corr.jpeg",  bg = "transparent", width = 8, height = 6, units = "in")
-
 
 
 # OLD ##
