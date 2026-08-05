@@ -1,6 +1,6 @@
 library(tidyverse)
 library(here)
-#library(purrr)
+library(purrr)
 library(ggrepel)
 library(ggdendro)
 library(cluster) # For silhouette function
@@ -8,11 +8,10 @@ library(cluster) # For silhouette function
 library(fpc) # For clusterboot
 library(patchwork)
 
-# Clustering fix the weighting by importance problem
 source("code/config.R")
 load(paste0(OUTPUT_PATH, "results/04_importance_pdp_pool_based.RData"))
 
-# Plot variable importance data #
+#── Variable Importance Data ──────────────────────────────────
 sp_guilds <- read_csv(here("data", "sp_guilds.csv")) %>%
   rename_with(~ gsub(" ", "_", .x))
 
@@ -30,6 +29,8 @@ imp_rank <- importance_df_all %>%
                               variable == "snag" ~ "Snag",
                               variable == "vegd" ~ "Vegetation\ndensity"))
 
+imp_rank %>% group_by(var_name) %>% summarize(mn_rank = mean(rank))
+
 outliers <- imp_rank %>%
   group_by(variable, rank) %>%
   mutate(Rank_Count = n(),
@@ -45,8 +46,6 @@ outliers <- imp_rank %>%
   dplyr::select(variable, var_name, Common_Name, rank, rank_Pct)
 
 ggplot(imp_rank, aes(rank, reorder(var_name, desc(rank))))+
-  #geom_violin() +
-  #ggbeeswarm::geom_beeswarm(corral = "wrap")+
   ggridges::geom_density_ridges(aes(height = after_stat(density)), scale = .95, stat = "density", trim = TRUE, )+
   geom_point(data = outliers)+
   #geom_jitter(width = .1, height = .1)+
@@ -62,8 +61,7 @@ ggplot(imp_rank, aes(rank, reorder(var_name, desc(rank))))+
 
 ggsave("output/figures/fig3_var_imp.jpeg", height = 5, width = 6)
 
-
-#── Helper functions (unchanged from before) ──────────────────────────────────
+#── Clustering helper functions ──────────────────────────────────
 
 extract_categorical_features <- function(pd_df, var_name) {
   levels_df <- pd_df %>%
@@ -121,7 +119,7 @@ extract_pdp_shape <- function(pd_df, group_keys) {
   }
 }
 
-# ── Extract CLEAN, unweighted shape features ──────────────────────────────────
+# ── Extract unweighted shape features ──────────────────────────────────
 
 pdp_shape_features <- pdp_all %>%
   group_by(species, variable) %>%
@@ -337,23 +335,45 @@ sp_guilds <- sp_guilds %>%
 # Dendrogram plot
 ddata <- ggdendro::dendro_data(hc_ward_gower, type = "rectangle")
 
-ddata$labels <- left_join(ddata$labels, sp_guilds, by = c("label" = "species"))
+ddata_labels <- left_join(ddata$labels, sp_guilds, by = c("label" = "species")) %>%
+  mutate(Habitat_Guild = str_replace(Habitat_Guild, "-", "-\n")) %>%
+  mutate(Habitat_Guild = str_to_title(Habitat_Guild)) %>%   # do the casing BEFORE factoring
+  mutate(Habitat_Guild = factor(Habitat_Guild, 
+                                levels = c("Limnophilic", 
+                                           "Limno-\nRheophilic",  
+                                           "Pelagic Rheo-\nLimnophilic",                         
+                                           "Rheo-\nLimnophilic", 
+                                           "Rheophilic")))
+# p1 <- 
+#   ggplot(segment(ddata))+
+#   geom_segment(aes(x=x, y=y, xend=xend, yend=yend))+
+#   geom_text(data = ddata$labels, aes(x,y-.23, label = name_clust, color = str_to_title(guild)), 
+#             size = 3.5)+
+#   coord_flip(clip="off")+
+#   labs(color = "Guild")+
+#   scale_color_manual(values = c("#1b9e77",
+#                                "#d95f02",
+#                               "#7570b3",
+#                              "gray40"))+
+#   theme_void(base_size = 14)+
+#   theme(
+#     plot.margin = margin(0, 0, 0, 30)  # extra left margin
+#   ) 
 
 p1 <- 
-  ggplot(segment(ddata))+
-  geom_segment(aes(x=x, y=y, xend=xend, yend=yend))+
-  geom_text(data = label(ddata), aes(x,y-.23, label = name_clust, color = str_to_title(guild)), size = 3.5)+
-  coord_flip(clip="off")+
-  labs(color = "Guild")+
-  scale_color_manual(values = c("#1b9e77",
-                                "#d95f02",
-                                "#7570b3",
-                                "gray40"))+
-  theme_void(base_size = 14)+
-  theme(
-    plot.margin = margin(0, 0, 0, 30)  # extra left margin
-  ) 
-
+  ggplot(segment(ddata)) +
+  geom_tile(data = ddata_labels, 
+            aes(x, y - .23, fill = Habitat_Guild), 
+            width = 0.9, height = .46, alpha = .55) +
+  geom_segment(aes(x = x, y = y, xend = xend, yend = yend)) +
+  geom_text(data = ddata_labels, aes(x, y - .23, label = name_clust), size = 3.5) +
+  coord_flip(clip = "off", xlim = c(1, n_leaves), ylim = c(min(ddata_labels$y) - 0.35, NA))+
+  labs(fill = "Habitat\nGuild") +
+  scale_fill_viridis_d(option = "D") +
+  theme_void(base_size = 14) +
+  theme(plot.margin = margin(0, 0, 0, 10),
+        legend.key.spacing.y = unit(0.2, "cm"))
+  
 p2 <- sil_sp %>% 
   mutate(species = factor(species, levels = ddata$labels$label)) %>%
   ggplot()+
@@ -371,9 +391,9 @@ p2 <- sil_sp %>%
   ) 
 
 
-p2+ p1 + plot_layout(width = c(.1, 1))
+p2+ p1 + plot_layout(width = c(.2, 1))
 
-ggsave(filename = "output/figures/fig4_dendro.jpeg",  bg = "transparent", width = 8, height = 8, units = "in")
+ggsave(filename = "output/figures/fig4_dendro_hab_guilds.jpeg",  bg = "transparent", width = 8, height = 8, units = "in")
 
 # Compare to other clustering versions
 hc_complete <- hclust(gower_dist, method = "complete")
