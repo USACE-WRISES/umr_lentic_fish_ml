@@ -235,7 +235,6 @@ ggplot() +
   theme(panel.grid.major = element_blank(),
         panel.grid.minor.y = element_blank())
 
-
 # ── Cross-validation comparison ─────────────────────────────────
 random_auc <- results_all %>%
   filter(cv_scheme == "random") %>%
@@ -248,7 +247,6 @@ results_diff <- left_join(results_all, random_auc) %>%
   mutate(
     auc_drop_z  = (auc_drop - mean(auc_drop)) / sd(auc_drop),
     flag = auc_drop_z > 1)
-
 
 # ── Figures ────────────────────────────────────────────────────────────────
 
