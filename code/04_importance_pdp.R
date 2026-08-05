@@ -77,58 +77,6 @@ for (i in seq_along(sp_list)) {
                        bind_rows(Filter(Negate(is.null), pdp_list_sp)))
 }
 
-# # Function to extract features from PDP plots
-# extract_pdp_features <- function(pd_df, group_keys) {
-#   var_name <- group_keys$variable  # get variable name from group keys, not from pd_df
-#   
-#   continuous_vars <- c("temp", "depth", "current", "do")
-#   
-#   if (!var_name %in% continuous_vars) {
-#     return(tibble(
-#       cor_linear     = NA_real_,
-#       peak_location  = NA_real_,
-#       response_range = max(pd_df$yhat) - min(pd_df$yhat)
-#     ))
-#   }
-#   
-#   x <- pd_df[[var_name]]
-#   y <- pd_df$yhat
-#   
-#   # Guard against all-NA or single-value x
-#   if (all(is.na(x)) || length(unique(x)) < 3) {
-#     return(tibble(
-#       cor_linear     = NA_real_,
-#       peak_location  = NA_real_,
-#       response_range = max(y) - min(y)
-#     ))
-#   }
-#   
-#   tibble(
-#     cor_linear     = cor(x, y, method = "spearman"),
-#     peak_location  = (x[which.max(y)] - min(x)) / (max(x) - min(x)),
-#     response_range = max(y) - min(y)
-#   )
-# }
-# 
-# # Signed importance for clustering
-# pdp_features <- pdp_all %>%
-#   group_by(species, variable) %>%
-#   group_modify(extract_pdp_features) %>%   # your existing function
-#   ungroup()
-# 
-# signed_importance <- importance_df_all %>%
-#   group_by(species) %>%
-#   mutate(importance_scaled = importance / sum(importance)) %>%
-#   ungroup() %>%
-#   left_join(pdp_features %>% select(species, variable, cor_linear),
-#             by = c("species","variable")) %>%
-#   mutate(signed_imp = case_when(
-#     variable %in% CONTINUOUS_VARS  ~ importance_scaled * sign(cor_linear),
-#     variable %in% CATEGORICAL_VARS ~ importance_scaled,
-#     TRUE                           ~ importance_scaled
-#   ))
-
 save(final_rf_list, importance_df_all, pdp_all,
-     #pdp_features, signed_importance,
      file = paste0(OUTPUT_PATH, "results/04_importance_pdp.RData"))
 cat("04 complete.\n")
