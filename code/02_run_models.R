@@ -15,7 +15,7 @@ plan(multisession, workers = N_CORES)
 
 cat("Using", N_CORES, "cores for parallel processing\n")
 
-# ── Core tuning function (unchanged) ────────────────────────────────────────
+# ── Core tuning function ────────────────────────────────────────
 run_one_species <- function(sp, fish_train, fish_folds, var_cols,
                             model_label, n_trees = N_TREES) {
   
