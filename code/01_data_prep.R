@@ -2,6 +2,7 @@ library(tidyverse)
 library(sf)
 library(here)
 library(tidymodels)
+library(corrr) # Correlations
 
 source("code/config.R")
 #load(DATA_PATH)
@@ -248,10 +249,31 @@ fish_6fold %>%
 # Fish data with all spatial cv scenarios
 fish_all_cv <- fish_6fold %>% left_join(backwater_cluster)
 
-write_csv(fish_all_cv, "data/cleaned/fish_all_cv.csv")
+#write_csv(fish_all_cv, "data/cleaned/fish_all_cv.csv")
 
 #sp_list <- unique(fish_all_cv$species)
 #if (!is.null(SP_SUBSET)) sp_list <- SP_SUBSET
+
+# ── Assess variable correlation and missing data ─────────────────
+
+corrs_all <- fish_all_cv %>%
+  filter(species == sp_list[1]) %>%
+  select(all_of(CONTINUOUS_VARS)) %>%
+  rename(`Water Temperature` = temp, `Water Depth` = depth, 
+         `Current Velocity` = current, `Dissolved Oxygen` = do) %>%
+  correlate(method = "pearson") %>% 
+  mutate(across(where(is.numeric), round, digits = 2))
+  
+
+write_csv(corrs_all, "output/tabS1_corr_tab.csv")
+
+missing_data <- fish_all_cv %>%
+  filter(species == sp_list[1]) %>%
+  select(all_of(c(CONTINUOUS_VARS,CATEGORICAL_VARS))) %>%
+  summarise(across(everything(), ~ mean(is.na(.)))) %>%
+  pivot_longer(cols = everything(), names_to = "var", values_to = "missing_prop")
+
+median(missing_data$missing_prop)
 
 # ── Pool-level spatial folds (per species, stored as list) ─────────────────
 spatial_folds_list <- lapply(sp_list, function(sp) {
@@ -295,11 +317,11 @@ random_folds_list <- lapply(sp_list, function(sp) {
 })
 names(random_folds_list) <- sp_list
 
-save(sp_list,
-     spatial_folds_list,
-     cluster_folds_list,
-     random_folds_list,
-     file = paste0(OUTPUT_PATH, "models/01_folds.RData"))
+# save(sp_list,
+#      spatial_folds_list,
+#      cluster_folds_list,
+#      random_folds_list,
+#      file = paste0(OUTPUT_PATH, "models/01_folds.RData"))
 
 cat("01_data_prep.R complete:", length(sp_list), "species,",
     "3 CV schemes\n")
