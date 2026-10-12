@@ -3,13 +3,15 @@ library(tidymodels)
 library(sf)
 library(patchwork)
 library(here)
+library(grid) # For textGrob in Figure 2
 
 source("code/config.R")
 load(paste0(OUTPUT_PATH, "results/03_thresholds_diagnostics.RData"))
 load(paste0(OUTPUT_PATH, "results/04_importance_pdp.RData"))
 
 sp_guilds <- read_csv(here("data", "sp_guilds.csv")) %>%
-  rename_with(~ gsub(" ", "_", .x))
+  rename_with(~ gsub(" ", "_", .x)) %>%
+  mutate(Common_Name = str_to_title(Common_Name))
 
 results_all <- left_join(results_all, sp_guilds)
 cv_preds_all <- left_join(cv_preds_all, sp_guilds)
@@ -20,7 +22,7 @@ results_tab <- select(results_all, Common_Name, Scientific_Name, "Species Code" 
          roc_auc = signif(round(roc_auc, 2), 2)) %>%
   rename("Common Name" =Common_Name, "Scientific Name" = Scientific_Name, "CV Scheme"=cv_scheme, "Variable Set"=var_set, "Minimum N"=min_n, "AUC"=roc_auc)
 
-write_csv(results_tab, "output/tabS1.csv")
+write_csv(results_tab, "output/tabS2_results_tab.csv")
 
 # ── Calibration plot ────────────────────────────────────────────────────
 
@@ -322,6 +324,5 @@ ggplot(all_cv, aes(x = spatial_roc_auc, y = random_roc_auc, label = Common_Name)
 ggsave("output/figures/figS6_CV_comp.jpeg", width = 9, height = 7)
 
 save(cv_comparison, varset_comparison, 
-     Common_Name_clusters, hclust_res,
      file = paste0(OUTPUT_PATH, "results/05_synthesis.RData"))
 cat("05 complete.\n")
