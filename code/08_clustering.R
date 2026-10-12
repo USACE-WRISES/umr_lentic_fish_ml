@@ -13,7 +13,8 @@ load(paste0(OUTPUT_PATH, "results/04_importance_pdp_pool_based.RData"))
 
 #── Variable Importance Data ──────────────────────────────────
 sp_guilds <- read_csv(here("data", "sp_guilds.csv")) %>%
-  rename_with(~ gsub(" ", "_", .x))
+  rename_with(~ gsub(" ", "_", .x)) %>%
+  mutate(Common_Name = str_to_title(Common_Name))
 
 # Variable importance
 imp_rank <- importance_df_all %>%
@@ -318,6 +319,8 @@ ddata_labels <- left_join(ddata$labels, sp_guilds, by = c("label" = "species")) 
                                            "Rheo-\nLimnophilic", 
                                            "Rheophilic")))
 
+n_leaves <- nrow(ddata$labels)
+
 p1 <- 
   ggplot(segment(ddata)) +
   geom_tile(data = ddata_labels, 
@@ -440,11 +443,11 @@ cat_peak <- shape_with_importance %>%
                            period   = "Period",
                            snag   = "Snag",
                            substrt   = "Substrate",
-                           vegd   = "Veg.\nDensity")) %>% 
+                           vegd   = "Vegetation\nDensity")) %>% 
   left_join(pdp_peak_cat) %>%
   mutate(cat_level = factor(case_when(variable == "snag" & value == "0" ~ "Absent", 
                                variable == "snag" & value == "1" ~ "Present",
-                               variable == "substrt" & value == "1" ~ "V. fine",
+                               variable == "substrt" & value == "1" ~ "Very fine",
                                variable == "substrt" & value == "2" ~ "Fine",
                                variable == "substrt" & value == "3" ~ "Sandy",
                                variable == "substrt" & value == "4" ~ "Hard",
@@ -452,7 +455,7 @@ cat_peak <- shape_with_importance %>%
                                variable == "vegd" & value == "2" ~ "Dense", 
                                TRUE ~ value),
                             levels = c("1", "2", "3", "Absent", "Present",
-                                       "V. fine", "Fine", "Sandy", "Hard",
+                                       "Very fine", "Fine", "Sandy", "Hard",
                                        "Sparse", "Dense")))
 
 
