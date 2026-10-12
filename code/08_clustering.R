@@ -353,7 +353,8 @@ p2 <- sil_sp %>%
 
 p2+ p1 + plot_layout(width = c(.2, 1))
 
-ggsave(filename = "output/figures/fig4_dendro_hab_guilds.jpeg",  bg = "transparent", width = 8, height = 8, units = "in")
+ggsave(filename = "output/figures/fig4_dendro_hab_guilds.jpeg",  bg = "transparent", 
+       width = 8.5, height = 8, units = "in")
 
 # Compare to other clustering versions
 hc_complete <- hclust(gower_dist, method = "complete")
@@ -443,7 +444,7 @@ cat_peak <- shape_with_importance %>%
                            period   = "Period",
                            snag   = "Snag",
                            substrt   = "Substrate",
-                           vegd   = "Vegetation\nDensity")) %>% 
+                           vegd   = "Vegetation\ndensity")) %>% 
   left_join(pdp_peak_cat) %>%
   mutate(cat_level = factor(case_when(variable == "snag" & value == "0" ~ "Absent", 
                                variable == "snag" & value == "1" ~ "Present",
