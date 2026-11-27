@@ -19,6 +19,7 @@ pool_bounds <- st_read(here("data", "raw", "spatial", "UMRR_Pools", "UMRR_Pools.
   filter(POOL %in% c("Pool 04", "Pool 08", "Pool 13"))
 
 # Aquatic Area boundary data
+# Available here: https://www.sciencebase.gov/catalog/item/5a708ef0e4b06e28e9cae58f
 aqa_dat <- st_read(here("data", "raw","spatial", "aqa", "aqa_2010_lvl3_011918.shp")) %>%
   mutate(across(where(is.numeric), ~ na_if(.x, -9999))) %>%
   select(OBJECTID:pool)
