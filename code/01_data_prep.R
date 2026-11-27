@@ -11,6 +11,7 @@ source("code/config.R")
 
 # Downloaded from UMESC 9/23/2025 with the option to download entire fish dataset
 #https://umesc.usgs.gov/data_library/fisheries/LTRM_FISH_DATA_ENTIRE.zip
+# Data for this analysis archived at: 10.5281/zenodo.24604233
 raw_fish <- read_csv(here("data", "raw", "ltrm_fish_data_entire.csv"))
 
 #Import pool boundary data
