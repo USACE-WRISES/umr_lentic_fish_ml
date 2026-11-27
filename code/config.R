@@ -19,9 +19,9 @@ CONTINUOUS_VARS  <- c("temp", "depth", "current", "do")
 CATEGORICAL_VARS <- c("period", "vegd", "substrt", "snag")
 
 # ── CV settings ────────────────────────────────────────────────────────────
-N_FOLDS         <- 6       # pool-level spatial CV
-N_CLUSTERS      <- 21      # patch clusters for within-pool CV
-N_REPEATS       <- 30      # repeats for patch-cluster CV
+N_FOLDS         <- 6       # pool-level CV
+N_CLUSTERS      <- 21      # patch clusters for lake-based CV
+N_REPEATS       <- 30      # repeats for lake-based CV
 
 # ── Model settings ─────────────────────────────────────────────────────────
 GRID_SIZE  <- 25
